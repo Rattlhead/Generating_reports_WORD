@@ -5,6 +5,7 @@ import os
 import re
 import sqlite3
 import time
+from typing import Any
 
 from docxtpl import DocxTemplate
 
@@ -69,8 +70,11 @@ def get_list_school(team_num: int):
     return cursor.execute(f"SELECT * FROM school WHERE team = {team_num}")
 
 
-def get_list_id_school(team_num: int):
-    """Получить список ID школ по номеру команды"""
+def get_list_id_school(team_num: int) -> list:
+    """Получить список ID школ по номеру команды
+    :param team_num:
+    :return:
+    """
     response = cursor.execute(f"SELECT * FROM school WHERE team = {team_num}")
     list_id = []
     for item in response:
@@ -92,16 +96,54 @@ def get_class_num(school_number: int, group_name: str) -> int:
     #     return item[0]
 
 
-def get_list_group_name(school_num: int):
-    """ Получить список названий групп по номеру школы"""
-    response = cursor.execute(
-        f"SELECT DISTINCT group_name FROM student WHERE school = {school_num} ")
-    list_name = []
-    for i, item in enumerate(response, 1):
-        list_name.append({
+def get_list_group_name(school_num: int) -> list[dict[str, int]]:
+    """ Получить список групп и индекс по номеру школы
+    :param school_num:
+    :return: список групп индекс|название группы
+    """
+    response = cursor.execute(f"SELECT DISTINCT group_name FROM student WHERE school = {school_num} ")
+    group_list = []
+    for item in response:
+        group_list.append(item[0])
+    # print('Список всех групп')
+    # for item in group_list:
+    #     print(item)
+
+    group_dop_list = []
+
+    # Создаем список групп допников
+    for i, item in enumerate(group_list):
+        if item in ('В-1', 'В-2', 'В-3', 'Р-1', 'Р-2', 'Р-3', 'А-1', 'А-2', 'А-3'):
+            group_dop_list.append(item)
+
+    group_dop_list.sort()  # Сначала сортируем по буквам
+    group_dop_list.sort(key=lambda x: (int(x.split('-')[1])))  # Потом сортируем по номеру
+
+    # Удаляем допников из основного списка
+    for item in ('В-1', 'В-2', 'В-3', 'Р-1', 'Р-2', 'Р-3', 'А-1', 'А-2', 'А-3'):
+        while group_list.count(item) > 0:
+            group_list.remove(item)
+
+    # print('--- Список групп допников ---')
+    # for item in group_dop_list:
+    #     print(f'Name = {item}')
+    # print('--- Список групп УТ ---')
+    #
+    # for item in group_list:
+    #     print(f'Name = {item}')
+
+    group_list += group_dop_list
+    new_list: list[dict[str, int]] = []
+    for i, item in enumerate(group_list, 1):
+        new_list.append({
             'index': i,
-            'name': item[0]})
-    return list_name
+            'name': item})
+
+    # print('---------')
+    # for item in new_list:
+    #     print(f'Name = {item}')
+
+    return new_list
 
 
 def time_lesson(index_number_group: int) -> str:
@@ -126,10 +168,10 @@ def list_day_lesson(index_number_group: int, list_start_date: list) -> list:
     """
     Возвращает список всех учебных дней у группы
     :param
-    index_number_group: int индекс группы
-    list_start_date: list список начальных дат заездов
+    index_number_group: индекс группы
+    list_start_date: список начальных дат заездов
     """
-    list_date = []
+    list_date: list = []
     for item in list_start_date:
         item = datetime.datetime.strptime(item, '%d.%m.%Y')
         if index_number_group in [1, 2, 3, 10, 11, 12]:
@@ -152,20 +194,18 @@ def list_day_lesson(index_number_group: int, list_start_date: list) -> list:
             # print('Пятница-Суббота')
         else:
             print('Ошибка в list_day_lesson')
-    # for item in list_date:
-    #     print( name_day_week(item))
+    for item in list_date:
+        print(name_day_week(item))
     return list_date
 
 
-def report_gen(team_num: int, school_num: int, group_name: str, class_num: int, index_number_group: int):
+def report_gen(team_num: int, school_num: int, group_name: str, class_num: int, index_number_group: int) -> None:
     """Номер команды, номер школы, номер группы, класс, уровень
     :param team_num: (id) Номер команды.
     :param school_num: (id) Номер школы.
     :param group_name: Название группы.
     :param class_num: Номер класса.
     :param index_number_group: Индекс группы.
-
-    :return:
     """
 
     # --------------- Создание переменных --------------
@@ -179,17 +219,14 @@ def report_gen(team_num: int, school_num: int, group_name: str, class_num: int, 
     table_security_2 = []  # Таблица техники безопасности 1
     table_security_3 = []  # Таблица техники безопасности 1
 
-    list_students = []
-    """Список детей в группе"""
-    list_start_date = []  # Даты начало заездов
-    """Список дат начала заездов в школе"""
-    list_date = []
-    """Список дат занятий группы в этой школе за весь год"""
+    list_students: list[Any] = []
+    list_start_date: list[Any] = []  # Даты начало заездов
+    list_date: list[Any] = []
 
     safety_precautions = 'Быть внимательным и дисциплинированным. Не размещать посторонние предметы на столах. Не включать компьютеры без разрешения учителя. Не трогать провода и разъемы соединительных кабелей.'
 
     program_name: str = ''
-    teacher_dop = ''
+    teacher_dop: str = ''
     # group_type = ''
     # group: str = ''  # Название группы детей (УТ-1 ВР-2)
     # group_num: int = 0  # Номер группы детей (УТ-1 = 1 УТ-8 = 8)
@@ -200,8 +237,8 @@ def report_gen(team_num: int, school_num: int, group_name: str, class_num: int, 
     school_name: str = ''  # Название школы
 
     # --------------- Открытие json --------------------
-    with open("list_themes.json", "r") as f:
-        list_themes = json.load(f)
+    with open("list_themes.json", "r", encoding="utf-8") as file:
+        list_themes = json.load(file)
 
     if team_num == 2:
         teacher_arvr = 'Чистяков Илья Сергеевич'
@@ -393,13 +430,13 @@ def report_gen(team_num: int, school_num: int, group_name: str, class_num: int, 
 
         elif group_name in ('А-1', 'А-2', 'А-3'):
             teacher_dop = teacher_geo
-            program_name = 'Образовательная робототехника на базе Arduino, Makeblock'
+            program_name = 'Геоинформационные технологии и Аэротехнологии. Изучение DJI Rise Tello и Mavic 2 pro'
             table_list_theme_1, table_list_theme_2, table_list_theme_3 = split_table(
                 table_themes(1, f'List_theme_{group_type}', teacher_geo))
 
-            table_security_1 = table_security(1, teacher_arvr)
-            table_security_2 = table_security(5, teacher_arvr)
-            table_security_3 = table_security(9, teacher_arvr)
+            table_security_1 = table_security(1, teacher_geo)
+            table_security_2 = table_security(5, teacher_geo)
+            table_security_3 = table_security(9, teacher_geo)
 
         elif group_name in ('Р-1', 'Р-2', 'Р-3'):
             teacher_dop = teacher_robo
@@ -407,9 +444,9 @@ def report_gen(team_num: int, school_num: int, group_name: str, class_num: int, 
             table_list_theme_1, table_list_theme_2, table_list_theme_3 = split_table(
                 table_themes(1, f'List_theme_{group_type}', teacher_robo))
 
-            table_security_1 = table_security(1, teacher_arvr)
-            table_security_2 = table_security(5, teacher_arvr)
-            table_security_3 = table_security(9, teacher_arvr)
+            table_security_1 = table_security(1, teacher_robo)
+            table_security_2 = table_security(5, teacher_robo)
+            table_security_3 = table_security(9, teacher_robo)
         else:
             print(f'Неизвестная группа - {group_name}')
     else:
@@ -440,7 +477,6 @@ def report_gen(team_num: int, school_num: int, group_name: str, class_num: int, 
     }
     # ------------ Заполнение дат -------------
     for i, item in enumerate(list_date, 1):
-
         context[f'date_{i}_d'] = str(item.strftime('%d'))
         context[f'date_{i}_y'] = str(item.strftime('%Y'))
         context[f'date_{i}_dm'] = str(item.strftime('%d.%m'))
@@ -462,7 +498,7 @@ def report_gen(team_num: int, school_num: int, group_name: str, class_num: int, 
         pass
         # print(f"Создать директорию не удалось")
     else:
-        print(f"Успешно создана директория")
+        print("Успешно создана директория")
 
     # print(f'{os.getcwd() + patch}/Журнал {group_name}, {school_name}.docx')
     template.save(f'{os.getcwd() + patch}/Журнал {group_name}, {school_name}.docx')

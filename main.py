@@ -4,9 +4,8 @@ from report_generation import *
 
 # print(get_list_group_name(8))
 #
-# for item in get_list_group_name(4):
-#     print(item['index'])
-#     print(item['name'])
+# for item in get_list_group_name(2):
+#     print(f'Index = {item["index"]} | Name = {item["name"]}')
 
 
 team_num: int = 0
