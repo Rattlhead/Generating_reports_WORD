@@ -2,6 +2,7 @@ import datetime
 
 import json
 import os
+import pprint
 import re
 import sqlite3
 import time
@@ -155,10 +156,10 @@ def time_lesson(index_number_group: int) -> str:
     time_lesson: str = ''
     if index_number_group in [1, 2, 3, 4, 5, 6, 7, 8, 9]:
         time_lesson = '11:40 – 14:10'
-        print(time_lesson)
+        # print(time_lesson)
     elif index_number_group in [10, 11, 12, 13, 14, 15, 16, 17, 18]:
         time_lesson = '14:10 – 16:40'
-        print(time_lesson)
+        # print(time_lesson)
     else:
         print('Ошибка в time_less')
     return time_lesson
@@ -194,8 +195,8 @@ def list_day_lesson(index_number_group: int, list_start_date: list) -> list:
             # print('Пятница-Суббота')
         else:
             print('Ошибка в list_day_lesson')
-    for item in list_date:
-        print(name_day_week(item))
+    # for item in list_date:
+    #     print(name_day_week(item))
     return list_date
 
 
@@ -406,7 +407,7 @@ def report_gen(team_num: int, school_num: int, group_name: str, class_num: int, 
 
         elif group_name in ('УТ-3', 'УТ-6', 'УТ-9', 'УТ-12', 'УТ-15', 'УТ-18'):
             table_list_theme_1 = table_themes(1, f'List_theme_Robo_{class_num}', teacher_robo)
-            table_security_1 = table_security(9, teacher_robo)
+            table_security_1 = table_security(1, teacher_robo)
 
             table_list_theme_2 = table_themes(5, f'List_theme_GEO_{class_num}', teacher_geo)
             table_security_2 = table_security(5, teacher_geo)
